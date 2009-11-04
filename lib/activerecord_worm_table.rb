@@ -1,3 +1,5 @@
+require 'active_record'
+
 # implements a write-once-read-many table, wherein there is a
 # currently active version of a table, one or more historical
 # versions and a working version. modifications are made
@@ -61,7 +63,11 @@ module ActiveRecord
       def dup_table_schema(from, to)
         connection.execute( "drop table if exists #{to}")
         ct = connection.select_one( "show create table #{from}")["Create Table"]
-        new_ct = ct.gsub( /CREATE TABLE `#{from}`/, "CREATE TABLE `#{to}`")
+        ct_no_constraint_names = ct.gsub(/CONSTRAINT `[^`]*`/, "CONSTRAINT ``")
+        i = 0
+        ct_uniq_constraint_names = ct_no_constraint_names.gsub(/CONSTRAINT ``/) { |s| i+=1 ; "CONSTRAINT `#{to}_#{i}`" }
+
+        new_ct = ct_uniq_constraint_names.gsub( /CREATE TABLE `#{from}`/, "CREATE TABLE `#{to}`")
         connection.execute(new_ct)
       end
 
