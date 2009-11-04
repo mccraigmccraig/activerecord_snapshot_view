@@ -1,6 +1,39 @@
 = activerecord_worm_table
 
-Description goes here.
+activerecord_worm_table manages multiple backing tables for an ActiveRecord model. there is
+a single active table, a different working table, and one or more history tables [default 1]
+
+inserts are done to the working table. the model's class method <tt>advance_version</tt> then makes
+the the active table history, the working table active, and creates a new working table with
+identical schema to the base table
+
+the model's +table_name+ method is overwritten to reflect the active table, so all ActiveRecord
+model methods, like finders, work transparently
+
+to use, just <tt>include ActiveRecord::WormTable</tt> into your model :
+
+  class Foo \< ActiveRecord::Base
+    include ActiveRecord::WormTable
+  end
+
+there are class methods to get the different table names, and manipulate the version :
+
+* <tt>Foo.table_name</tt> : current active table name
+* <tt>Foo.working_table_name</tt> : current working table name
+* <tt>Foo.advance_version</tt> : make active table historical, working table active and create a new working table
+
+the active table name is maintained as a row in an automatically created auxilliary table, 
+[<tt>foos_switch</tt> in the case of <tt>Foo</tt>], and this is updated in a transaction
+
+the presence of the historical tables [which are recycled] means that even though a transaction
+may advance_version, other transactions already in progress will continue to see the old 
+active table_name, and selects in progress will continue to completion without rollback [ provided
+they don't take longer to complete than it takes to recycle all history tables ]
+
+== Dependencies
+
+only works with MySQL at the moment : ddl statements are too database specific, and rails' schema
+operations too limited, to easily make it generic. wouldn't be too hard to extend for another db tho
 
 == Note on Patches/Pull Requests
  

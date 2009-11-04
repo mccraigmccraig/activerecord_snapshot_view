@@ -5,8 +5,13 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "activerecord_worm_table"
-    gem.summary = %Q{TODO: one-line summary of your gem}
-    gem.description = %Q{TODO: longer description of your gem}
+    gem.summary = %Q{WORM tables for ActiveRecord models}
+    gem.description = %Q{manage WriteOnceReadMany tables backing ActiveRecord models.
+                         there will be a switch table and multiple backing tables for each 
+                         ActiveRecord model, all created and managed automatically. a new
+                         version of a table is created by writing to the working table, and
+                         then Model.advance_version which makes the working table active,
+                         and creates a new working table from the base model schmea}
     gem.email = "mccraigmccraig@googlemail.com"
     gem.homepage = "http://github.com/mccraigmccraig/activerecord_worm_table"
     gem.authors = ["mccraig mccraig of the clan mccraig"]
