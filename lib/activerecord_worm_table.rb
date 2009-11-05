@@ -71,7 +71,7 @@ module ActiveRecord
         connection.execute(new_ct)
       end
 
-      def ensure_active_table(name)
+      def ensure_version_table(name)
         if !connection.table_exists?(name) # don't execute ddl unless necessary
           dup_table_schema(base_table_name, name)
         end
@@ -126,6 +126,13 @@ module ActiveRecord
         tvn[ (tvn.index(atn) + 1) % tvn.size ]
       end
 
+      def ensure_all_tables
+        suffixed_table_names.each do |table_name|
+          ensure_version_table(table_name)
+        end
+        ensure_switch_table
+      end
+
       # make working table active, then recreate new working table from base table schema
       def advance_version
         st = ensure_switch_table
@@ -141,7 +148,7 @@ module ActiveRecord
         # ensure the presence of the new active and working tables. 
         # happens after the switch table update, since this may commit a surrounding 
         # transaction in dbs with retarded non-transactional ddl like, oh i dunno, MyFuckingSQL
-        ensure_active_table(active_table_name)
+        ensure_version_table(active_table_name)
 
         # recreate the new working table from the base schema. 
         new_wtn = working_table_name
