@@ -110,13 +110,24 @@ module ActiveRecord
         [base_table_name] + suffixed_table_names
       end
 
+      def default_active_table_name
+        if !defined?(RAILS_ENV) || (RAILS_ENV !~ /^test/)
+          base_table_name
+        else
+          # if in a test environment, make the default version table
+          # one of the suffixed tables : code which doesn't use Model.table_name
+          # will fail
+          suffixed_table_names.first
+        end
+      end
+
       # name of the active table
       def active_table_name
         st = switch_table_name
         begin
           connection.select_value( "select current from #{st}" )
         rescue
-        end || base_table_name
+        end || default_active_table_name
       end
 
       # name of the working table
