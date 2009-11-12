@@ -19,8 +19,7 @@ to use, just <tt>include ActiveRecord::WormTable</tt> into your model :
 there are class methods to get the different table names, and manipulate the version :
 
 * <tt>Foo.table_name</tt> : current active table name
-* <tt>Foo.advance_version(&block)</tt> : run +block to create a new version of the table. the working table will appear
-active to the +Thread running +block , and if +block completes then the working table will become permanently globally active
+* <tt>Foo.advance_version(&block)</tt> : run +block to create a new version of the table. the working table will appear active to the +Thread running +block , and if +block completes then the working table will become permanently globally active
 * <tt>Foo.working_table_name</tt> : current working table name
 * <tt>Foo.advance_version</tt> : make active table historical, working table active and create a new working table
 
