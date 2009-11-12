@@ -26,10 +26,24 @@ module ActiveRecord
       def ClassMethods.included(mod)
         mod.instance_eval do
           alias_method :org_table_name, :table_name
-          alias_method :table_name, :active_table_name
+          alias_method :table_name, :active_working_table_or_active_table_name
         end
       end
       
+      # number of historical tables to keep around for posterity, or more likely
+      # to ensure running transactions aren't taken down by advance_version
+      # recreating a table. default 2
+      def historical_version_count
+        @historical_version_count || 2
+      end
+
+      # set the number of historical tables to keep around to ensure running 
+      # transactions aren't interrupted by truncating working tables. 2 is default
+      def set_historical_version_count(count)
+        @historical_version_count = count
+      end
+      alias :historical_version_count= :set_historical_version_count
+
       # hide the ActiveRecord::Base method, which redefines a table_name method,
       # and instead capture the given name as the base_table_name
       def set_table_name(name)
@@ -37,27 +51,37 @@ module ActiveRecord
       end
       alias :table_name= :set_table_name
 
+      # make the working table temporarily active [ for this thread only ], 
+      # execute the block, and if completed without exception then
+      # make the working table permanently active
+      def new_version(&block)
+        begin
+          self.active_working_table_name = working_table_name
+          r = block.call
+          advance_version
+          r
+        ensure
+          self.active_working_table_name = nil
+        end
+      end
+
+      # name of the active table, or the working table if inside a new_version block
+      def active_working_table_or_active_table_name
+        active_working_table_name || active_table_name
+      end
+
+      private
+
       def base_table_name
         if !@base_table_name
           @base_table_name = org_table_name
+          # the original table_name method re-aliases itself !
           class << self
-            alias_method :table_name, :active_table_name
+            alias_method :table_name, :active_working_table_or_active_table_name
           end
         end
         @base_table_name
       end
-
-      # number of historical tables to keep around for posterity, or more likely
-      # to ensure running transactions aren't taken down by advance_version
-      # recreating a table
-      def historical_version_count
-        @historical_version_count || 2
-      end
-
-      def set_historical_version_count(count)
-        @historical_version_count = count
-      end
-      alias :historical_version_count= :set_historical_version_count
 
       # use schema of from table to recreate to table
       def dup_table_schema(from, to)
@@ -121,7 +145,7 @@ module ActiveRecord
         end
       end
 
-      # name of the active table
+      # name of the active table read direct from db
       def active_table_name
         st = switch_table_name
         begin
@@ -168,7 +192,18 @@ module ActiveRecord
         else
           connection.execute( "truncate table #{new_wtn}" )
         end
+      end
 
+      def thread_local_key_name
+        "ActiveRecord::WormTable::" + self.to_s
+      end
+
+      def active_working_table_name
+        Thread.current[thread_local_key_name]
+      end
+
+      def active_working_table_name=(name)
+        Thread.current[thread_local_key_name] = name
       end
     end
   end
