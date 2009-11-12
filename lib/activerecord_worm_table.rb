@@ -51,27 +51,6 @@ module ActiveRecord
       end
       alias :table_name= :set_table_name
 
-      # make the working table temporarily active [ for this thread only ], 
-      # execute the block, and if completed without exception then
-      # make the working table permanently active
-      def new_version(&block)
-        begin
-          self.active_working_table_name = working_table_name
-          r = block.call
-          advance_version
-          r
-        ensure
-          self.active_working_table_name = nil
-        end
-      end
-
-      # name of the active table, or the working table if inside a new_version block
-      def active_working_table_or_active_table_name
-        active_working_table_name || active_table_name
-      end
-
-      private
-
       def base_table_name
         if !@base_table_name
           @base_table_name = org_table_name
@@ -204,6 +183,25 @@ module ActiveRecord
 
       def active_working_table_name=(name)
         Thread.current[thread_local_key_name] = name
+      end
+
+      # name of the active table, or the working table if inside a new_version block
+      def active_working_table_or_active_table_name
+        active_working_table_name || active_table_name
+      end
+
+      # make the working table temporarily active [ for this thread only ], 
+      # execute the block, and if completed without exception then
+      # make the working table permanently active
+      def new_version(&block)
+        begin
+          self.active_working_table_name = working_table_name
+          r = block.call
+          advance_version
+          r
+        ensure
+          self.active_working_table_name = nil
+        end
       end
     end
   end
