@@ -75,7 +75,8 @@ module ActiveRecord
       end
 
       def ensure_version_table(name)
-        if !connection.table_exists?(name) # don't execute ddl unless necessary
+        if !connection.table_exists?(name) &&
+            base_table_name!=name # don't execute ddl unless necessary
           dup_table_schema(base_table_name, name)
         end
       end
@@ -196,6 +197,7 @@ module ActiveRecord
       def new_version(&block)
         begin
           self.active_working_table_name = working_table_name
+          ensure_version_table(working_table_name)
           r = block.call
           advance_version
           r
