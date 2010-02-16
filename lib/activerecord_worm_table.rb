@@ -115,14 +115,9 @@ module ActiveRecord
       end
 
       def default_active_table_name
-        if !defined?(RAILS_ENV) || (RAILS_ENV !~ /^test/)
-          base_table_name
-        else
-          # if in a test environment, make the default version table
-          # one of the suffixed tables : code which doesn't use Model.table_name
-          # will fail
-          suffixed_table_names.first
-        end
+        # no longer use a different table name for test environments...
+        # it makes a mess with named scopes
+        base_table_name
       end
 
       # name of the active table read direct from db
@@ -198,6 +193,7 @@ module ActiveRecord
         begin
           self.active_working_table_name = working_table_name
           ensure_version_table(working_table_name)
+          connection.execute("truncate table #{working_table_name}")
           r = block.call
           advance_version
           r
