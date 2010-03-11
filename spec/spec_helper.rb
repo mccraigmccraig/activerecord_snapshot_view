@@ -1,6 +1,6 @@
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-require 'activerecord_worm_table'
+require 'activerecord_worm_table/worm_table'
 require 'spec'
 require 'spec/autorun'
 
