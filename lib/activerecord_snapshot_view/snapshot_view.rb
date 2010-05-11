@@ -19,6 +19,11 @@ module ActiveRecord
       end
     end
 
+    # if a block given to the +new_version+ method throws this exception,
+    # then the working table will still be made current
+    class SaveWork < Exception
+    end
+
     module ClassMethods
       ALPHABET = "abcdefghijklmnopqrstuvwxyz"
 
@@ -196,6 +201,9 @@ module ActiveRecord
           r = block.call
           advance_version
           r
+        rescue SaveWork => e
+          advance_version
+          nil # block didn't return, so there is no result
         ensure
           self.active_working_table_name = nil
         end
