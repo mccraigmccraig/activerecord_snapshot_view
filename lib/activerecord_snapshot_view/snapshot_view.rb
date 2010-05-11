@@ -22,6 +22,10 @@ module ActiveRecord
     # if a block given to the +new_version+ method throws this exception,
     # then the working table will still be made current
     class SaveWork < Exception
+      attr_reader :cause
+      def initialize(cause=nil)
+        @cause = cause
+      end
     end
 
     module ClassMethods
@@ -203,7 +207,11 @@ module ActiveRecord
           r
         rescue SaveWork => e
           advance_version
-          nil # block didn't return, so there is no result
+          if e.cause
+            raise e.cause
+          else
+            raise e
+          end
         ensure
           self.active_working_table_name = nil
         end
