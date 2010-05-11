@@ -1,27 +1,29 @@
-= activerecord_worm_table
+= activerecord_snapshot_view
 
-activerecord_worm_table manages multiple backing tables for an ActiveRecord model. there is
-a single active table, a different working table, and one or more history tables [default 1]
+activerecord_snapshot_view provides simple management of snapshot materialized views for ActiveRecord
 
-inserts are done to the working table. the model's class method <tt>advance_version</tt> then makes
-the the active table history, the working table active, and creates a new working table with
-identical schema to the base table
+a snapshot view is created by includeing the <tt>ActiveRecord::SnapshotView</tt> module into an ActiveRecord
+class. new versions of the snapshot are created using the <tt>new_version</tt> class method
+
+multiple versions of the view are maintained : there is
+a single active version, a working version, and one or more history tables [by default 1]
 
 the model's +table_name+ method is overwritten to reflect the active table, so all ActiveRecord
-model methods, like finders, work transparently
+model methods, like finders, work transparently. the caveat is that you must use the +table_name+ method
+to determine the current snapshot's table name when constructing SQL
 
-to use, just <tt>include ActiveRecord::WormTable</tt> into your model :
+to use, <tt>include ActiveRecord::SnapshotView</tt> into your model :
 
   class Foo < ActiveRecord::Base
-    include ActiveRecord::WormTable
+    include ActiveRecord::SnapshotView
   end
 
 there are class methods to get the different table names, and manipulate the version :
 
-* <tt>Foo.table_name</tt> : current active table name
-* <tt>Foo.advance_version(&block)</tt> : run +block+ to create a new version of the table. the working table will appear active to the +Thread+ running +block+ , and if +block+ completes then the working table will become permanently globally active
+* <tt>Foo.table_name</tt> : current active or working table name
 * <tt>Foo.working_table_name</tt> : current working table name
-* <tt>Foo.advance_version</tt> : make active table historical, working table active and create a new working table
+* <tt>Foo.active_table_name</tt> : current active table name
+* <tt>Foo.new_version(&block)</tt> : run +block+ to create a new version of the table. during execution of the block <tt>Foo.table_name</tt> will return the working table name. if +block+ completes without raising an exception, or if the exception is an ActiveRecord::SnapshotView::SaveWork, then the working table will become permanently globally active
 
 the active table name is maintained as a row in an automatically created auxilliary table, 
 [<tt>foos_switch</tt> in the case of <tt>Foo</tt>], and this is updated in a transaction
@@ -33,8 +35,7 @@ they don't take longer to complete than it takes to recycle all history tables ]
 
 == Dependencies
 
-only works with MySQL at the moment : ddl statements are too database specific, and rails' schema
-operations too limited, to easily make it generic. wouldn't be too hard to extend for another db tho
+MySQL only at the moment
 
 == Note on Patches/Pull Requests
  

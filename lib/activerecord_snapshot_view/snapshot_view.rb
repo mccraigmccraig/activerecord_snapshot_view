@@ -1,5 +1,6 @@
-# implements a write-once-read-many table, wherein there is a
-# currently active version of a table, one or more historical
+# implements snapshot materialized views for ActiveRecord
+# 
+# currently active version of a view, one or more historical
 # versions and a working version. modifications are made
 # by writing new data to the working version of the table
 # and then switching the active version to what was the working version.
@@ -9,7 +10,7 @@
 # version table in the database
 
 module ActiveRecord
-  module WormTable
+  module SnapshotView
     def self.included(mod)
       mod.instance_eval do
         class << self
@@ -168,7 +169,7 @@ module ActiveRecord
       end
 
       def thread_local_key_name
-        "ActiveRecord::WormTable::" + self.to_s
+        "ActiveRecord::SnapshotView::" + self.to_s
       end
 
       def active_working_table_name
