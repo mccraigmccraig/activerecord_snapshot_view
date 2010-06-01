@@ -9,6 +9,17 @@
 # switch table with a single row which names the currently live
 # version table in the database
 
+# AssocationReflection caches table names... we have to undo this
+class ActiveRecord::Reflection::AssociationReflection
+  def table_name
+    klass.table_name
+  end
+
+  def quoted_table_name
+    klass.quoted_table_name
+  end
+end
+
 module ActiveRecord
   module SnapshotView
     def self.included(mod)
