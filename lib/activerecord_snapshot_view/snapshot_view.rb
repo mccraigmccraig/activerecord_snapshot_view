@@ -30,6 +30,22 @@ module ActiveRecord
       end
     end
 
+    # prepare a SnapshotView model for migration... move all data to the 
+    # base table, make that current, and remove the other store tables.
+    # if the model no longer exists, or is no longer a SnapshotView,
+    # catch any errors
+    def self.prepare_to_migrate(model)
+      klassname = model.to_s.singularize.camelize
+      begin
+        klass = eval(klassname)
+        if klass.ancestors.include?(ActiveRecord::SnapshotView)
+          klass.prepare_to_migrate
+        end
+      rescue
+        $stderr << "model: #{klassname} no longer exists?\n"
+      end
+    end
+
     # if a block given to the +new_version+ method throws this exception,
     # then the working table will still be made current
     class SaveWork < Exception
@@ -91,6 +107,18 @@ module ActiveRecord
 
         new_ct = ct_uniq_constraint_names.gsub( /CREATE TABLE `#{from}`/, "CREATE TABLE `#{to}`")
         connection.execute(new_ct)
+      end
+
+      # copy all data to base table, reset switch table and drop suffixed tables... for migration support
+      def prepare_to_migrate
+        if active_table_name != base_table_name
+          connection.execute( "truncate table #{base_table_name}" )
+          connection.execute( "insert into #{base_table_name} select * from #{active_table_name}" )
+          switch_to(base_table_name)
+        end
+        suffixed_table_names.each do |stn|
+          connection.execute( "drop table if exists #{stn}" )
+        end
       end
 
       def ensure_version_table(name)
@@ -161,18 +189,21 @@ module ActiveRecord
         end
         ensure_switch_table
       end
-
-      # make working table active, then recreate new working table from base table schema
-      def advance_version
+      
+      # update switch table to point to a different table
+      def switch_to(table)
         st = ensure_switch_table
-
         # want a transaction at least here [surround is ok too] so 
         # there is never an empty switch table
         ActiveRecord::Base.transaction do
-          wtn = working_table_name
           connection.execute( "delete from #{st}")
-          connection.execute( "insert into #{st} values (\'#{wtn}\')")
+          connection.execute( "insert into #{st} values (\'#{table}\')")
         end
+      end
+
+      # make working table active, then recreate new working table from base table schema
+      def advance_version
+        switch_to(working_table_name)
 
         # ensure the presence of the new active and working tables. 
         # happens after the switch table update, since this may commit a surrounding 
