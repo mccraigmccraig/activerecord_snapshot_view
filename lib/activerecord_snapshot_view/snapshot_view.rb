@@ -55,11 +55,11 @@ module ActiveRecord
       end
 
       def message
-        (@cause.message if @cause) || super.message
+        (@cause.message if @cause) || "SaveWork"
       end
 
       def backtrace
-        (@cause.backtrace if @cause) || super.backtrace
+        (@cause.backtrace if @cause) || super
       end
     end
 
