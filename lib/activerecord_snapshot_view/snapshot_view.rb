@@ -53,6 +53,14 @@ module ActiveRecord
       def initialize(cause=nil)
         @cause = cause
       end
+
+      def message
+        (@cause.message if @cause) || super.message
+      end
+
+      def backtrace
+        (@cause.backtrace if @cause) || super.backtrace
+      end
     end
 
     module ClassMethods
@@ -264,11 +272,7 @@ module ActiveRecord
           r
         rescue SaveWork => e
           advance_version
-          if e.cause
-            raise e.cause
-          else
-            raise e
-          end
+          raise e # raise the SaveWork again, in case we are inside nested new_versions
         ensure
           self.active_working_table_name = nil
         end
