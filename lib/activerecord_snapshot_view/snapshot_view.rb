@@ -237,14 +237,16 @@ module ActiveRecord
       end
 
       # like new_version, but instead of an empty table you start with
-      # a copy of the previous version
-      def updated_version(&block)
+      # a copy of the previous version (if update=true)
+      def updated_version(update=true, &block)
         new_version do
-          sql = <<-EOF
-            insert into #{working_table_name}
-            select * from #{active_table_name}
-          EOF
-          connection.execute(sql)
+          if update
+            sql = <<-EOF
+              insert into #{working_table_name}
+              select * from #{active_table_name}
+            EOF
+            connection.execute(sql)
+          end
           block.call
         end
       end
