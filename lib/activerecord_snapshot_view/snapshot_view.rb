@@ -236,6 +236,19 @@ module ActiveRecord
         active_working_table_name || active_table_name
       end
 
+      # like new_version, but instead of an empty table you start with
+      # a copy of the previous version
+      def updated_version(&block)
+        new_version do
+          sql = <<-EOF
+            insert into #{working_table_name}
+            select * from #{active_table_name}
+          EOF
+          connection.execute(sql)
+          block.call
+        end
+      end
+
       # make the working table temporarily active [ for this thread only ], 
       # execute the block, and if completed without exception then
       # make the working table permanently active
