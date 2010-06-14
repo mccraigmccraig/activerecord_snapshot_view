@@ -46,6 +46,18 @@ module ActiveRecord
       end
     end
 
+    # remove all SnapshotView related tables for a model, making it a normal model again
+    # does not require that the SnapshotView module is included on the model class
+    def self.normalize(base_table)
+      view_tables = ActiveRecord::Base::connection.tables.select{|n| n=~ /^#{base_table}_([[:alpha:]]|switch)$/}
+
+      $stderr << "#{base_table} matches no view_tables\n" if view_tables.empty?
+      view_tables.each do |table|
+        ActiveRecord::Base::connection.execute( "drop table #{table}" )
+      end
+
+    end
+
     # if a block given to the +new_version+ method throws this exception,
     # then the working table will still be made current
     class SaveWork < Exception
@@ -122,11 +134,11 @@ module ActiveRecord
         if active_table_name != base_table_name
           connection.execute( "truncate table #{base_table_name}" )
           connection.execute( "insert into #{base_table_name} select * from #{active_table_name}" )
-          switch_to(base_table_name)
         end
         suffixed_table_names.each do |stn|
           connection.execute( "drop table if exists #{stn}" )
         end
+        connection.execute( "drop table #{switch_table_name}" )
       end
 
       def ensure_version_table(name)
