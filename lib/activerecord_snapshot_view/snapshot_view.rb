@@ -145,7 +145,7 @@ module ActiveRecord
         suffixed_table_names.each do |stn|
           connection.execute( "drop table if exists #{stn}" )
         end
-        connection.execute( "drop table #{switch_table_name}" )
+        connection.execute( "drop table if exists #{switch_table_name}" )
       end
 
       def ensure_version_table(name)
