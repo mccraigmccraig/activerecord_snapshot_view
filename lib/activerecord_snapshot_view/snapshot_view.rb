@@ -10,13 +10,17 @@
 # version table in the database
 
 # AssocationReflection caches table names... we have to undo this
-class ActiveRecord::Reflection::AssociationReflection
-  def table_name
-    klass.table_name
-  end
+module ActiveRecord
+  module Reflection
+    class AssociationReflection
+      def table_name
+        klass.table_name
+      end
 
-  def quoted_table_name
-    klass.quoted_table_name
+      def quoted_table_name
+        klass.quoted_table_name
+      end
+    end
   end
 end
 
@@ -30,19 +34,22 @@ module ActiveRecord
       end
     end
 
+    def self.class_from_symbol(sym)
+      eval(sym.to_s.camelize)
+    end
+
     # prepare a SnapshotView model for migration... move all data to the 
     # base table, make that current, and remove the other store tables.
     # if the model no longer exists, or is no longer a SnapshotView,
     # catch any errors
-    def self.prepare_to_migrate(model)
-      klassname = model.to_s.singularize.camelize
+    def self.prepare_to_migrate(model_sym)
       begin
-        klass = eval(klassname)
+        klass = class_from_symbol(model_sym)
         if klass.ancestors.include?(ActiveRecord::SnapshotView)
           klass.prepare_to_migrate
         end
       rescue
-        $stderr << "model: #{klassname} no longer exists?\n"
+        $stderr << "model: #{model_sym} no longer exists?\n"
       end
     end
 

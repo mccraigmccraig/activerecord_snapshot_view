@@ -1,9 +1,9 @@
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-require 'activerecord_worm_table/worm_table'
+require 'activerecord_snapshot_view'
 require 'spec'
 require 'spec/autorun'
 
 Spec::Runner.configure do |config|
-  
+  config.mock_with :rr
 end

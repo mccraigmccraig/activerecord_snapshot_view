@@ -13,7 +13,9 @@ begin
     gem.email = "mccraigmccraig@googlemail.com"
     gem.homepage = "http://github.com/mccraigmccraig/activerecord_snapshot_view"
     gem.authors = ["mccraig mccraig of the clan mccraig"]
+    gem.add_dependency "activerecord", ">= 2.3.9"
     gem.add_development_dependency "rspec"
+    gem.add_development_dependency "rr", ">= 0.10.5"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new
