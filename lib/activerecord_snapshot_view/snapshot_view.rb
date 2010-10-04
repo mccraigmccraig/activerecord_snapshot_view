@@ -48,8 +48,9 @@ module ActiveRecord
         if klass.ancestors.include?(ActiveRecord::SnapshotView)
           klass.prepare_to_migrate
         end
-      rescue
-        $stderr << "model: #{model_sym} no longer exists?\n"
+      rescue Exception=>e
+        $stderr << "model: #{model_sym} no longer exists?\nignored Exception:\n"
+        $stderr << [e.message, *e.backtrace].join("\n")
       end
     end
 
