@@ -23,7 +23,10 @@ there are class methods to get the different table names, and manipulate the ver
 * <tt>Foo.table_name</tt> : current active or working table name
 * <tt>Foo.working_table_name</tt> : current working table name
 * <tt>Foo.active_table_name</tt> : current active table name
-* <tt>Foo.new_version(&block)</tt> : run +block+ to create a new version of the table. during execution of the block <tt>Foo.table_name</tt> will return the working table name. if +block+ completes without raising an exception, or if the exception is an ActiveRecord::SnapshotView::SaveWork, then the working table will become permanently globally active
+* <tt>Foo.new_version(&block)</tt> : run +block+ to create a new version of the table
+* <tt>Foo.updated_version(&block)</tt> : copy all data from the active table to the working table, then run +block+ to update the working version
+
+during the execution of +block+ in +new_version+ or +updated_version+ <tt>Foo.table_name</tt> returns the working table name. if +block+ completes without raising an exception, or if the exception is an ActiveRecord::SnapshotView::SaveWork, then the working table becomes permanently globally active
 
 the active table name is maintained as a row in an automatically created auxilliary table, 
 [<tt>foos_switch</tt> in the case of <tt>Foo</tt>], and this is updated in a transaction
